@@ -1,0 +1,35 @@
+version: '3.7'
+services:
+  code-server:
+    image: codercom/code-server
+    # ports: 
+    # - 8080:8080 # Should be removed once you setup nginx. It is for testing the compose file only.
+    volumes:
+    - ${BASE_DIR}/code-server/local:/home/coder/.local
+    - ${BASE_DIR}/code-server/project:/home/coder/project
+    command: ['--auth', 'none']
+
+  nginx-sso:
+    image: luzifer/nginx-sso
+    # ports:
+    # - 8082:8082
+    volumes: 
+    - ${BASE_DIR}/nginx-sso/data:/data
+    - ${BASE_DIR}/nginx-sso/plugins:/plugins
+
+  nginx:
+    image: nginx
+    depends_on: 
+      - nginx-sso
+      - code-server
+    ports:
+      - 443:443
+    volumes:
+      - ${BASE_DIR}/nginx:/etc/nginx
+    restart: always
+
+  ddclient:
+    image: linuxserver/ddclient
+    volumes:
+      - ${BASE_DIR}/ddclient:/config
+    restart: always 

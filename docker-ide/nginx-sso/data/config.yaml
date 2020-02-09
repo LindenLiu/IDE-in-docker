@@ -1,0 +1,63 @@
+login:
+  title: "My Home IDE Login"
+  default_method: "simple"
+  default_redirect: "https://blog.lindenliu.com/"
+  hide_mfa_field: true # Set to false if you are going to use MFA(multiple factor authentication)
+  names:
+    simple: "Username / Password"
+
+cookie:
+  domain: "your.site.com" # Change to your domain
+  # Make sure you change it, it is the cookie's encryption key
+  authentication_key: "Ff1uWJcLouKu9kwxgbnKcU3ps47gps72sxEz79TGHFCpJNCPtiZAFDisM4MWbstH"
+  expire: 3600        # Optional, default: 3600
+  prefix: "nginx-sso" # Optional, default: nginx-sso
+  secure: true        # Optional, default: false
+
+# Optional, default: 127.0.0.1:8082
+listen:
+  addr: "0.0.0.0" # nginx will be deployed in another container, so 127.0.0.1 won't be accessible. 
+  port: 8082
+
+audit_log:
+  targets:
+    - fd://stdout
+    - file:///var/log/nginx-sso/audit.jsonl
+  events: ['access_denied', 'login_success', 'login_failure', 'logout', 'validate']
+  headers: ['x-origin-uri']
+  trusted_ip_headers: ["X-Forwarded-For", "RemoteAddr", "X-Real-IP"]
+
+plugins:
+  directory: /plugins/
+
+acl:
+  rule_sets:
+    # Allow for any uri for coder and admins.
+    - rules:
+      - field: "x-origin-uri"
+      allow: ["coder", "@admins"]
+
+providers:
+  # Authentication against embedded user database
+  # Supports: Users, Groups, MFA
+  simple:
+    enable_basic_auth: false
+
+    # Unique username mapped to bcrypt hashed password
+    users:
+      # The password is coder-test!!!
+      coder: "$2y$12$aDy6kIufCO/zvWWzC.74TO1ZHmuwZWgoS5edTAbX7EPYuYH0imReK"
+
+    # Groupname to users mapping
+    groups:
+      admins: ["coder"]
+        # MFA configs: Username to configs mapping
+    # mfa:
+    #   coder:
+    #     - provider: totp
+    #       attributes:
+    #         secret: MZXW6YTBOIFA  # required
+    #         period: 30            # optional, defaults to 30 (Google Authenticator)
+    #         skew: 1               # optional, defaults to 1 (Google Authenticator)
+    #         digits: 8             # optional, defaults to 6 (Google Authenticator)
+    #         algorithm: sha1       # optional (sha1, sha256, sha512), defaults to sha1 (Google Authenticator)
